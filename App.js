@@ -76,7 +76,7 @@ function MenuLateral({ navigation, state }) {
           await AsyncStorage.multiRemove(['token', 'usuario'])
           navigation.dispatch(DrawerActions.closeDrawer())
           // Navegar al stack principal para mostrar login
-        navigation.getParent()?.dispatch({ type: 'RESET', payload: { index: 0, routes: [{ name: 'Login' }] } })
+        if (onLogout) onLogout()
         }
       }
     ])
