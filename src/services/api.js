@@ -64,10 +64,8 @@ export const usuariosService = {
 }
 
 // DASHBOARD
-  export const configuracionService = {
-  obtener: () => api.get('/configuracion'),
-  actualizar: (data) => api.put('/configuracion', data),
-  incrementarFactura: () => api.put('/configuracion/incrementar-factura'),
+export const dashboardService = {
+  obtener: () => api.get('/dashboard'),
 }
 
 // CLOUDINARY
