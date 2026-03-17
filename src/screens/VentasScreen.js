@@ -27,20 +27,24 @@ export default function VentasScreen() {
     if (usuario) setRolUsuario(JSON.parse(usuario).rol)
   }
 
-  const cargarDatos = async () => {
+const cargarDatos = async () => {
     try {
-      const [resHoy, vHoy, respEmpleados] = await Promise.all([
+      const [resHoy, vHoy] = await Promise.all([
         ventasService.resumenHoy(),
         ventasService.obtenerTodas(),
-        usuariosService.listar()
       ])
       setResumen(resHoy.data)
       setVentas(vHoy.data)
-      setEmpleados(respEmpleados.data)
     } catch (error) {
-      console.log('Error:', error)
+      console.log('Error ventas:', error)
     } finally {
       setRefreshing(false)
+    }
+    try {
+      const respEmpleados = await usuariosService.listar()
+      setEmpleados(respEmpleados.data)
+    } catch (error) {
+      console.log('Error empleados:', error)
     }
   }
 

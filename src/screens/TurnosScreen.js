@@ -4,6 +4,7 @@ import {
   RefreshControl, TextInput, Alert, Modal, FlatList
 } from 'react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
+import { usuariosService } from '../services/api'
 import { useTema } from '../context/TemaContext'
 
 // ─── Configuración de turnos ───────────────────────────────────────────────
@@ -59,20 +60,12 @@ const formatFechaCorta = (fecha) =>
 const formatHoraActual = () =>
   new Date().toLocaleTimeString('es-GT', { hour: '2-digit', minute: '2-digit' })
 
-// ─── Datos de demo (reemplazar con tu API) ────────────────────────────────
-const EMPLEADOS_DEMO = [
-  { id: '1', nombre: 'María García', puesto: 'Cajera', avatar: '👩' },
-  { id: '2', nombre: 'Carlos López', puesto: 'Vendedor', avatar: '👨' },
-  { id: '3', nombre: 'Ana Martínez', puesto: 'Supervisora', avatar: '👩‍💼' },
-  { id: '4', nombre: 'Luis Pérez', puesto: 'Bodeguero', avatar: '👷' },
-]
-
 // ─── Componente principal ─────────────────────────────────────────────────
 export default function TurnosEmpleadosScreen() {
   const { tema } = useTema()
   const [tab, setTab] = useState('hoy') // hoy | semana | asignar
   const [refreshing, setRefreshing] = useState(false)
-  const [empleados] = useState(EMPLEADOS_DEMO)
+  const [empleados, setEmpleados] = useState([])
 
   // asignaciones: { [fechaKey]: { [empleadoId]: 'mañana' | 'tarde' | null } }
   const [asignaciones, setAsignaciones] = useState({})
@@ -90,6 +83,15 @@ export default function TurnosEmpleadosScreen() {
   const diasSemana = Array.from({ length: 7 }, (_, i) => addDias(lunesBase, i))
 
   useEffect(() => { cargarDatos() }, [])
+  usuariosService.listar().then(r => {
+  const lista = (r.data || []).map(u => ({
+    id: String(u.id),
+    nombre: u.nombre,
+    puesto: u.rol,
+    avatar: u.rol === 'admin' ? '👑' : '👤'
+  }))
+  setEmpleados(lista)
+}).catch(() => {})
 
   // ─── Persistencia local (reemplazá con tu API) ──────────────────────────
   const cargarDatos = async () => {
