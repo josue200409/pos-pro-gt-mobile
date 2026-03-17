@@ -59,7 +59,7 @@ const MENU_EMPLEADO = [
   { name: 'Empleados', label: 'Empleados', emoji: '👥', color: '#7C3AED' }
 ]
 
-function MenuLateral({ navigation, state }) {
+function MenuLateral({ navigation, state, onLogout }) {
   const { tema } = useTema()
   const [usuario, setUsuario] = useState(null)
   const rutaActual = state?.routes[state.index]?.name
