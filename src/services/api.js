@@ -55,7 +55,7 @@ export const clientesService = {
 // USUARIOS
 export const usuariosService = {
   listar: () => api.get('/auth/usuarios'),
-  crear: (data) => api.post('/auth/register', data),
+  crear: (data) => api.post('/auth/crear-usuario', data),
   toggleActivo: (id) => api.put(`/auth/usuarios/${id}/toggle`),
   cambiarPassword: (id, password) => api.put(`/auth/usuarios/${id}/password`, { password }),
   historialVentas: (id) => api.get(`/auth/usuarios/${id}/ventas`),
