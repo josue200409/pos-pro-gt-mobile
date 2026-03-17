@@ -28,7 +28,7 @@ import MermasScreen from './src/screens/MermasScreen'
 import EmpleadosScreen from './src/screens/EmpleadosScreen'
 import SeguridadScreen from './src/screens/SeguridadScreen' 
 
-const Drawer = createDrawerNavigator
+const Drawer = createDrawerNavigator()
 const Stack = createNativeStackNavigator()
 
 const MENU_ADMIN = [
