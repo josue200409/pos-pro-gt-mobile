@@ -7,7 +7,7 @@ import {
 import * as ImagePicker from 'expo-image-picker'
 import * as DocumentPicker from 'expo-document-picker'
 import * as FileSystem from 'expo-file-system'
-import { productosService, subirFoto } from '../services/api'
+import { productosService, subirFoto, categoriasService } from '../services/api'
 import EscanerBarcode from '../components/EscanerBarcode'
 import { useTema } from '../context/TemaContext'
 import AsyncStorage from '@react-native-async-storage/async-storage'
@@ -55,8 +55,10 @@ export default function InventarioScreen() {
   const [modalEscaner, setModalEscaner] = useState(false)
   const [form, setForm] = useState({
     nombre: '', precio: '', costo: '', stock: '',
-    stock_minimo: '5', emoji: '📦', codigo_barras: ''
+    stock_minimo: '5', emoji: '📦', codigo_barras: '', categoria_id: null
   })
+
+const [categorias, setCategorias] = useState([])
 
   // Importar Excel
   const [modalImportar, setModalImportar] = useState(false)
@@ -93,9 +95,10 @@ export default function InventarioScreen() {
   const [modalBuscarProdPromo, setModalBuscarProdPromo] = useState(false)
   const [busquedaPromo, setBusquedaPromo] = useState('')
 
-  useEffect(() => {
+ useEffect(() => {
     obtenerUsuario()
     cargarProductos()
+    cargarCategorias()
   }, [])
 
   useEffect(() => {
@@ -110,6 +113,12 @@ export default function InventarioScreen() {
   }
 
   async function cargarProductos() {
+    async function cargarCategorias() {
+    try {
+      const r = await categoriasService.obtenerTodas()
+      setCategorias(r.data || [])
+    } catch { setCategorias([]) }
+  }
     try {
       const response = await productosService.obtenerTodos()
       setProductos(response.data)
@@ -288,12 +297,18 @@ export default function InventarioScreen() {
         try { urlFoto = await subirFoto(fotoUri) } catch { urlFoto = null }
       } else if (fotoUri?.startsWith('http')) { urlFoto = fotoUri }
 
+    const usuarioData = await AsyncStorage.getItem('usuario')
+      const usuarioObj = usuarioData ? JSON.parse(usuarioData) : null
       const data = {
         nombre: form.nombre, precio: parseFloat(form.precio),
         costo: parseFloat(form.costo) || 0, stock: parseInt(form.stock) || 0,
         stock_minimo: parseInt(form.stock_minimo) || 5, emoji: form.emoji,
-        codigo_barras: form.codigo_barras || `GT${Date.now()}`, foto_url: urlFoto
+        codigo_barras: form.codigo_barras || `GT${Date.now()}`, foto_url: urlFoto,
+        categoria_id: form.categoria_id || null,
+        usuario_id: usuarioObj?.id || null,
+        nombre_usuario: usuarioObj?.nombre || null
       }
+      
       if (editando) { await productosService.actualizar(editando.id, data); Alert.alert('✅ Actualizado') }
       else { await productosService.crear(data); Alert.alert('✅ Creado') }
       setModalVisible(false); cargarProductos()
@@ -692,6 +707,32 @@ export default function InventarioScreen() {
                 ))}
               </View>
               <View style={{ flexDirection: 'row', gap: 10, marginBottom: 10 }}>
+              <Text style={{ fontSize: 11, fontWeight: '700', color: tema.textoTerciario, textTransform: 'uppercase', marginBottom: 6 }}>Categoría</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 10 }}>
+                  <View style={{ flexDirection: 'row', gap: 8 }}>
+                    <TouchableOpacity
+                      style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20, borderWidth: 1,
+                        backgroundColor: !form.categoria_id ? tema.primario : tema.fondoSecundario,
+                        borderColor: !form.categoria_id ? tema.primario : tema.borde }}
+                      onPress={() => setForm({ ...form, categoria_id: null })}
+                    >
+                      <Text style={{ color: !form.categoria_id ? '#fff' : tema.texto, fontSize: 12, fontWeight: '600' }}>Sin categoría</Text>
+                    </TouchableOpacity>
+                    {categorias.map(cat => (
+                      <TouchableOpacity
+                        key={cat.id}
+                        style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20, borderWidth: 1,
+                          backgroundColor: form.categoria_id === cat.id ? cat.color : tema.fondoSecundario,
+                          borderColor: form.categoria_id === cat.id ? cat.color : tema.borde }}
+                        onPress={() => setForm({ ...form, categoria_id: cat.id })}
+                      >
+                        <Text style={{ color: form.categoria_id === cat.id ? '#fff' : tema.texto, fontSize: 12, fontWeight: '600' }}>
+                          {cat.emoji} {cat.nombre}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </ScrollView>
                 {[{ key: 'stock', label: 'Stock Actual' }, { key: 'stock_minimo', label: 'Stock Mínimo' }].map(({ key, label }) => (
                   <View key={key} style={{ flex: 1 }}>
                     <Text style={{ fontSize: 11, fontWeight: '700', color: tema.textoTerciario, textTransform: 'uppercase', marginBottom: 4 }}>{label}</Text>

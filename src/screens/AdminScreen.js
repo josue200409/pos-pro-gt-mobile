@@ -4,7 +4,7 @@ import {
   Modal, TextInput, Alert, Switch, Image
 } from 'react-native'
 import * as ImagePicker from 'expo-image-picker'
-import { usuariosService, configuracionService } from '../services/api'
+import { usuariosService, configuracionService, authService } from '../services/api'
 import { subirFoto } from '../services/api'
 import { useTema } from '../context/TemaContext'
 
@@ -19,6 +19,8 @@ export default function AdminScreen() {
   const [configCargando, setConfigCargando] = useState(true)
   const [guardandoConfig, setGuardandoConfig] = useState(false)
   const [subiendoFoto, setSubiendoFoto] = useState(null)
+  const [sesiones, setSesiones] = useState([])
+  const [modalSesiones, setModalSesiones] = useState(false)
 
   useEffect(() => { cargarUsuarios(); cargarConfig() }, [])
 
@@ -44,6 +46,13 @@ export default function AdminScreen() {
       const r = await usuariosService.listar()
       setUsuarios(r.data)
     } catch { Alert.alert('Error', 'No se pudieron cargar los usuarios') }
+  }
+
+  const cargarSesiones = async () => {
+    try {
+      const r = await usuariosService.sesionesActivas()
+      setSesiones(r.data || [])
+    } catch { setSesiones([]) }
   }
 
   const crearUsuario = async () => {
@@ -155,9 +164,19 @@ export default function AdminScreen() {
         <View style={{ paddingHorizontal: 16, marginTop: 20 }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
             <Text style={{ fontSize: 12, fontWeight: '700', color: tema.textoTerciario, textTransform: 'uppercase' }}>Usuarios ({usuarios.length})</Text>
-            <TouchableOpacity style={{ backgroundColor: tema.primario, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8 }} onPress={() => setModalUsuario(true)}>
-              <Text style={{ fontSize: 12, fontWeight: '700', color: '#fff' }}>+ Nuevo</Text>
-            </TouchableOpacity>
+            <View style={{ flexDirection: 'row' }}>
+                <TouchableOpacity
+                  style={{ backgroundColor: '#7c3aed', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8, marginRight: 8 }}
+                  onPress={() => { cargarSesiones(); setModalSesiones(true) }}
+                >
+                  <Text style={{ color: '#fff', fontWeight: '700', fontSize: 12 }}>📱 Sesiones</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={{ backgroundColor: tema.primario, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8 }}
+                  onPress={() => setModalUsuario(true)}
+                >
+                  <Text style={{ color: '#fff', fontWeight: '700', fontSize: 12 }}>+ Nuevo</Text>
+                </TouchableOpacity>
+              </View>
           </View>
 
           {usuarios.map(u => (
@@ -353,4 +372,49 @@ export default function AdminScreen() {
       </Modal>
     </View>
   )
+  
+  {/* MODAL SESIONES ACTIVAS */}
+<Modal visible={modalSesiones} transparent animationType="slide">
+  <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' }}>
+    <View style={{ backgroundColor: tema.fondoCard, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, maxHeight: '80%' }}>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+        <Text style={{ fontSize: 18, fontWeight: '900', color: tema.texto }}>📱 Sesiones Activas</Text>
+        <TouchableOpacity onPress={() => setModalSesiones(false)}>
+          <Text style={{ fontSize: 16, color: tema.textoTerciario, fontWeight: '700' }}>✕</Text>
+        </TouchableOpacity>
+      </View>
+      <ScrollView>
+        {sesiones.length === 0
+          ? <Text style={{ textAlign: 'center', color: tema.textoSecundario, marginTop: 20 }}>No hay sesiones activas</Text>
+          : sesiones.map(s => (
+            <View key={s.id} style={{ backgroundColor: tema.fondoSecundario, borderRadius: 12, padding: 12, marginBottom: 8, borderWidth: 1, borderColor: tema.borde }}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                <View>
+                  <Text style={{ fontSize: 14, fontWeight: '700', color: tema.texto }}>{s.nombre}</Text>
+                  <Text style={{ fontSize: 11, color: tema.textoSecundario }}>{s.email} · {s.rol}</Text>
+                  <Text style={{ fontSize: 10, color: tema.textoTerciario, marginTop: 4 }} numberOfLines={1}>{s.dispositivo}</Text>
+                  <Text style={{ fontSize: 10, color: tema.textoTerciario }}>IP: {s.ip}</Text>
+                </View>
+                <TouchableOpacity
+                  style={{ backgroundColor: '#fee2e2', borderRadius: 8, padding: 8, borderWidth: 1, borderColor: '#fca5a5' }}
+                  onPress={() => {
+                    Alert.alert('Cerrar sesión', `¿Cerrar sesión de ${s.nombre}?`, [
+                      { text: 'Cancelar', style: 'cancel' },
+                      { text: 'Cerrar', style: 'destructive', onPress: async () => {
+                        await usuariosService.cerrarSesion(s.id)
+                        cargarSesiones()
+                      }}
+                    ])
+                  }}
+                >
+                  <Text style={{ fontSize: 12, color: '#dc2626', fontWeight: '700' }}>Cerrar</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          ))
+        }
+      </ScrollView>
+    </View>
+  </View>
+</Modal>
 }

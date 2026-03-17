@@ -26,6 +26,7 @@ export const authService = {
 
 // PRODUCTOS
 export const productosService = {
+  historialPrecios: (id) => api.get(`/productos/${id}/historial-precios`),
   obtenerTodos: () => api.get('/productos'),
   crear: (data) => api.post('/productos', data),
   actualizar: (id, data) => api.put(`/productos/${id}`, data),
@@ -34,11 +35,13 @@ export const productosService = {
 
 // VENTAS
 export const ventasService = {
+  cancelar: (id, data) => api.put(`/ventas/${id}/cancelar`, data),
   obtenerTodas: () => api.get('/ventas'),
   crear: (data) => api.post('/ventas', data),
   resumenHoy: () => api.get('/ventas/resumen/hoy'),
   historialFecha: (fecha) => api.get(`/ventas/historial/${fecha}`),
   resumenRango: (desde, hasta) => api.get(`/ventas/resumen/rango?desde=${desde}&hasta=${hasta}`)
+  
 }
 
 // CLIENTES
@@ -61,6 +64,8 @@ export const usuariosService = {
   historialVentas: (id) => api.get(`/auth/usuarios/${id}/ventas`),
   eliminar: (id) => api.delete(`/auth/usuarios/${id}`),
   actualizarFoto: (id, foto_url) => api.put(`/auth/usuarios/${id}/foto`, { foto_url }),
+  sesionesActivas: () => api.get('/auth/sesiones-activas'),
+  cerrarSesion: (id) => api.delete(`/auth/sesiones-activas/${id}`),
 }
 
 // DASHBOARD
@@ -114,6 +119,14 @@ export const proveedoresService = {
   compras: (id) => api.get(`/proveedores/${id}/compras`),
   registrarCompra: (id, data) => api.post(`/proveedores/${id}/compra`, data),
   stockBajo: () => api.get('/proveedores/alertas/stock-bajo'),
+}
+
+// CATEGORIAS
+export const categoriasService = {
+  obtenerTodas: () => api.get('/productos/categorias/todas'),
+  crear: (data) => api.post('/productos/categorias', data),
+  actualizar: (id, data) => api.put(`/productos/categorias/${id}`, data),
+  eliminar: (id) => api.delete(`/productos/categorias/${id}`),
 }
  
 export default api
