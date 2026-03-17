@@ -75,7 +75,8 @@ export default function MermasScreen() {
 
   async function cargarProductos() {
     try {
-      const data = await productosService.listar()
+      const response = await productosService.obtenerTodos()
+      const data = response.data
       setProductos(Array.isArray(data) ? data : [])
     } catch { setProductos([]) }
   }
