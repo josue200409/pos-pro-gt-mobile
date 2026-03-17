@@ -66,7 +66,7 @@ export default function ProveedoresScreen() {
       else await proveedoresService.crear(form)
       setModalProveedor(false)
       cargarDatos()
-    } catch (e) { Alert.alert('Error', 'No se pudo guardar') }
+   } catch (e) { Alert.alert('Error', e.response?.data?.error || e.message || 'No se pudo guardar') }
   }
 
   const eliminarProveedor = (p) => {
