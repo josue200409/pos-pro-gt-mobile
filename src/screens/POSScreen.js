@@ -234,6 +234,74 @@ export default function POSScreen() {
     cargarDatos()
   }
 
+  const generarTicketSimple = async () => {
+    if (!ventaCompletada) return
+    setGenerandoPDF(true)
+    try {
+      const empresa = configEmpresa
+      const fecha = new Date().toLocaleString('es-GT')
+      const items = ventaCompletada.carrito.map(i =>
+        `<tr>
+          <td>${i.nombre}</td>
+          <td style="text-align:center">${i.cantidad}</td>
+          <td style="text-align:right">Q${parseFloat(i.precio).toFixed(2)}</td>
+          <td style="text-align:right">Q${(parseFloat(i.precio) * i.cantidad).toFixed(2)}</td>
+        </tr>`
+      ).join('')
+
+      const html = `<!DOCTYPE html><html><head><meta charset="utf-8">
+      <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Courier New', monospace; font-size: 12px; width: 280px; margin: 0 auto; padding: 8px; }
+        .center { text-align: center; }
+        .bold { font-weight: bold; }
+        .divider { border-top: 1px dashed #000; margin: 6px 0; }
+        table { width: 100%; border-collapse: collapse; }
+        th { font-size: 10px; border-bottom: 1px solid #000; padding: 2px 0; }
+        td { padding: 2px 0; font-size: 11px; }
+        .total-row { font-weight: bold; font-size: 13px; border-top: 1px solid #000; padding-top: 4px; }
+      </style>
+      </head><body>
+        <div class="center bold" style="font-size:14px">${empresa.empresa_nombre || 'POS Pro GT'}</div>
+        <div class="center" style="font-size:10px">${empresa.empresa_direccion || ''}</div>
+        <div class="center" style="font-size:10px">Tel: ${empresa.empresa_telefono || ''}</div>
+        <div class="center" style="font-size:10px">NIT: ${empresa.empresa_nit || ''}</div>
+        <div class="divider"></div>
+        <div style="font-size:10px">Fecha: ${fecha}</div>
+        <div style="font-size:10px">Cajero: ${usuario?.nombre || 'N/A'}</div>
+        ${ventaCompletada.clienteActivo ? `<div style="font-size:10px">Cliente: ${ventaCompletada.clienteActivo.nombre}</div>` : ''}
+        <div class="divider"></div>
+        <table>
+          <tr>
+            <th style="text-align:left">Producto</th>
+            <th>Cant</th>
+            <th style="text-align:right">Precio</th>
+            <th style="text-align:right">Total</th>
+          </tr>
+          ${items}
+        </table>
+        <div class="divider"></div>
+        <table>
+          ${ventaCompletada.montoDescuento > 0 ? `
+          <tr><td>Subtotal</td><td style="text-align:right">Q${ventaCompletada.subtotal.toFixed(2)}</td></tr>
+          <tr><td>Descuento</td><td style="text-align:right">-Q${ventaCompletada.montoDescuento.toFixed(2)}</td></tr>
+          ` : ''}
+          <tr class="total-row"><td>TOTAL</td><td style="text-align:right">Q${ventaCompletada.total.toFixed(2)}</td></tr>
+          ${ventaCompletada.vuelto > 0 ? `<tr><td>Vuelto</td><td style="text-align:right">Q${ventaCompletada.vuelto.toFixed(2)}</td></tr>` : ''}
+        </table>
+        <div class="divider"></div>
+        <div class="center" style="font-size:10px; margin-top:4px">¡Gracias por su compra!</div>
+        <div class="center" style="font-size:10px">Vuelva pronto 😊</div>
+      </body></html>`
+
+      const { uri } = await Print.printToFileAsync({ html, base64: false })
+      await Sharing.shareAsync(uri, { mimeType: 'application/pdf', dialogTitle: 'Ticket de Venta', UTI: 'com.adobe.pdf' })
+    } catch {
+      Alert.alert('Error', 'No se pudo generar el ticket')
+    }
+    setGenerandoPDF(false)
+  }
+
   const limpiarTodo = () => {
     setCarrito([])
     setDescuento(0)
@@ -771,11 +839,18 @@ export default function POSScreen() {
                 {generandoPDF ? '⏳ Generando...' : '🧾 Generar Factura FEL'}
               </Text>
             </TouchableOpacity>
+          <TouchableOpacity
+              style={{ backgroundColor: '#059669', borderRadius: 14, padding: 16, alignItems: 'center', marginBottom: 10, opacity: generandoPDF ? 0.6 : 1 }}
+              onPress={generarTicketSimple}
+              disabled={generandoPDF}
+            >
+              <Text style={{ fontSize: 15, fontWeight: '700', color: '#fff' }}>🧾 Ticket Simple</Text>
+            </TouchableOpacity>
             <TouchableOpacity
               style={{ backgroundColor: tema.fondoSecundario, borderRadius: 14, padding: 16, alignItems: 'center', borderWidth: 1, borderColor: tema.borde }}
               onPress={finalizarSinFactura}
             >
-              <Text style={{ fontSize: 15, fontWeight: '700', color: tema.textoSecundario }}>No necesito factura</Text>
+              <Text style={{ fontSize: 15, fontWeight: '700', color: tema.textoSecundario }}>Sin comprobante</Text>
             </TouchableOpacity>
           </View>
         </View>
