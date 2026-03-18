@@ -5,6 +5,7 @@ import {
 } from 'react-native'
 import { CameraView, useCameraPermissions } from 'expo-camera'
 import { productosService, ventasService, clientesService, configuracionService } from '../services/api'
+import { hayConexion, guardarVentaOffline, guardarCacheProductos } from '../services/offline'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { useTema } from '../context/TemaContext'
 import * as Print from 'expo-print'
@@ -66,7 +67,10 @@ export default function POSScreen() {
       setClientes(respClientes.data)
       if (u) setUsuario(JSON.parse(u))
     } catch (e) { console.log('Error cargando datos:', e) }
+      // Guardar cache para offline
+      guardarCacheProductos(resp.data).catch(() => {})
   }
+
 
   const mostrarMensaje = (texto, tipo = 'success') => {
     if (mensajeTimer.current) clearTimeout(mensajeTimer.current)
@@ -183,7 +187,7 @@ export default function POSScreen() {
       const tarjetaMonto = parseFloat(pagos.tarjeta) || 0
       const transferenciaMonto = parseFloat(pagos.transferencia) || 0
 
-      await ventasService.crear({
+      const ventaData = {
         items: carrito.map(i => ({ producto_id: i.id, cantidad: i.cantidad, precio: parseFloat(i.precio) })),
         subtotal,
         descuento: montoDescuento,
@@ -192,14 +196,21 @@ export default function POSScreen() {
         cliente_id: clienteActivo?.id || null,
         efectivo_recibido: efectivoMonto + tarjetaMonto + transferenciaMonto,
         vuelto: vuelto,
-        // Desglose por método (lo guarda en la DB si tu backend lo soporta)
         pagos_detalle: {
           efectivo: efectivoMonto,
           tarjeta: tarjetaMonto,
           transferencia: transferenciaMonto,
         }
-      })
+      }
 
+      const online = await hayConexion()
+      if (online) {
+        await ventasService.crear(ventaData)
+      } else {
+        await guardarVentaOffline(ventaData)
+        Alert.alert('⚠️ Sin conexión', 'La venta se guardó localmente y se sincronizará cuando haya internet.')
+      }
+      
       setVentaCompletada({
         carrito: [...carrito],
         subtotal, montoDescuento, total,

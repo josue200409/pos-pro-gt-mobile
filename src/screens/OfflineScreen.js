@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react'
 import {
-  View, Text, TouchableOpacity, ScrollView,
-  Alert, FlatList
+  View, Text, TouchableOpacity, ScrollView, Alert
 } from 'react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import * as Network from 'expo-network'
 import { useTema } from '../context/TemaContext'
 import { ventasService, productosService } from '../services/api'
+import { sincronizarVentas as syncVentas, obtenerVentasPendientes } from '../services/offline'
 
 export default function OfflineScreen() {
   const { tema } = useTema()
@@ -34,8 +34,8 @@ export default function OfflineScreen() {
 
   const cargarPendientes = async () => {
     try {
-      const data = await AsyncStorage.getItem('ventas_offline')
-      setVentasPendientes(data ? JSON.parse(data) : [])
+      const pendientes = await obtenerVentasPendientes()
+      setVentasPendientes(pendientes)
     } catch { setVentasPendientes([]) }
   }
 
@@ -67,24 +67,18 @@ export default function OfflineScreen() {
 
   const sincronizarVentas = async () => {
     if (!conectado) { Alert.alert('Sin conexión', 'Necesitas internet para sincronizar'); return }
-    if (ventasPendientes.length === 0) { Alert.alert('Info', 'No hay ventas pendientes de sincronizar'); return }
     setSincronizando(true)
-    let exitosas = 0
-    let fallidas = 0
-    const pendientesRestantes = []
-    for (const venta of ventasPendientes) {
-      try {
-        await ventasService.crear(venta)
-        exitosas++
-      } catch {
-        fallidas++
-        pendientesRestantes.push(venta)
-      }
+    try {
+      const resultado = await syncVentas(ventasService)
+      await cargarPendientes()
+      Alert.alert(
+        'Sincronización completada',
+        `✅ ${resultado.exitosas} ventas subidas${resultado.fallidas > 0 ? `\n❌ ${resultado.fallidas} fallidas` : ''}`
+      )
+    } catch (e) {
+      Alert.alert('Error', 'No se pudo sincronizar: ' + e.message)
     }
-    await AsyncStorage.setItem('ventas_offline', JSON.stringify(pendientesRestantes))
-    setVentasPendientes(pendientesRestantes)
     setSincronizando(false)
-    Alert.alert('Sincronización completada', `✅ ${exitosas} ventas subidas\n${fallidas > 0 ? `❌ ${fallidas} fallidas` : ''}`)
   }
 
   const limpiarPendientes = () => {
