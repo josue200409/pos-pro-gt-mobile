@@ -129,4 +129,10 @@ export const categoriasService = {
   eliminar: (id) => api.delete(`/productos/categorias/${id}`),
 }
  
+// MONITOR
+export const monitorService = {
+  health: () => api.get('/monitor/health'),
+  stats: () => api.get('/monitor/stats'),
+}
+
 export default api

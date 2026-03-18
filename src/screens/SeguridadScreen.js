@@ -7,6 +7,7 @@ import { useTema } from '../context/TemaContext'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import * as Sharing from 'expo-sharing'
 import * as FileSystem from 'expo-file-system'
+import { monitorService } from '../services/api'
 
 const BASE_URL = 'https://pos-pro-gt-backend.onrender.com/api'
 
@@ -23,6 +24,7 @@ const TABS = [
   { id: 'actividad', label: 'Actividad',  emoji: '📋' },
   { id: 'alertas',   label: 'Alertas',    emoji: '🚨' },
   { id: 'backup',    label: 'Backup',     emoji: '☁️' },
+  { id: 'monitor',   label: 'Monitor',    emoji: '📊' },
 ]
 
 const MODULOS = ['Todos', 'auth', 'ventas', 'inventario', 'seguridad', 'empleados', 'mermas']
@@ -50,11 +52,28 @@ export default function SeguridadScreen() {
   const [emailDestino, setEmailDestino] = useState('')
   const [enviandoEmail, setEnviandoEmail] = useState(false)
   const [descargando, setDescargando] = useState(false)
+  const [healthData, setHealthData] = useState(null)
+  const [statsData, setStatsData] = useState(null)
+  const [cargandoMonitor, setCargandoMonitor] = useState(false)
+
+  const cargarMonitor = async () => {
+    setCargandoMonitor(true)
+    try {
+      const [health, stats] = await Promise.all([
+        monitorService.health(),
+        monitorService.stats()
+      ])
+      setHealthData(health.data)
+      setStatsData(stats.data)
+    } catch { Alert.alert('Error', 'No se pudo cargar el monitor') }
+    setCargandoMonitor(false)
+  }
 
   useEffect(() => {
     if (tab === 'actividad') { cargarActividad(); cargarResumen() }
     if (tab === 'alertas')   { cargarBloqueados(); cargarResumen() }
     if (tab === 'backup')    cargarHistorialBackup()
+    if (tab === 'monitor')   cargarMonitor()
   }, [tab])
 
   useEffect(() => {
@@ -413,6 +432,68 @@ export default function SeguridadScreen() {
                 ))
             }
 
+            <View style={{ height: 40 }} />
+          </View>
+        )}
+
+        {/* ── MONITOR ─────────────────────────────────────────────────────── */}
+        {tab === 'monitor' && (
+          <View style={{ padding: 16 }}>
+            <TouchableOpacity
+              style={{ backgroundColor: tema.primario, borderRadius: 12, padding: 14, alignItems: 'center', marginBottom: 16, opacity: cargandoMonitor ? 0.6 : 1 }}
+              onPress={cargarMonitor}
+              disabled={cargandoMonitor}
+            >
+              <Text style={{ color: '#fff', fontWeight: '700', fontSize: 14 }}>
+                {cargandoMonitor ? '⏳ Cargando...' : '🔄 Actualizar Monitor'}
+              </Text>
+            </TouchableOpacity>
+
+            {healthData && (
+              <View style={{ backgroundColor: tema.fondoCard, borderRadius: 14, padding: 16, borderWidth: 1, borderColor: tema.borde, marginBottom: 16 }}>
+                <Text style={{ fontSize: 14, fontWeight: '700', color: tema.texto, marginBottom: 12 }}>🖥️ Estado del Servidor</Text>
+                {[
+                  { label: 'Estado', val: healthData.status === 'ok' ? '✅ Funcionando' : '❌ Error', color: healthData.status === 'ok' ? '#059669' : '#dc2626' },
+                  { label: 'Base de datos', val: `${healthData.database?.status === 'ok' ? '✅' : '❌'} ${healthData.database?.responseTime}` },
+                  { label: 'Memoria usada', val: healthData.memoria?.usado },
+                  { label: 'Memoria libre', val: healthData.memoria?.libre },
+                  { label: 'Uptime', val: healthData.uptime },
+                  { label: 'Node.js', val: healthData.node },
+                ].map(({ label, val, color }) => (
+                  <View key={label} style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8, borderBottomWidth: 1, borderColor: tema.borde }}>
+                    <Text style={{ fontSize: 13, color: tema.textoSecundario }}>{label}</Text>
+                    <Text style={{ fontSize: 13, fontWeight: '700', color: color || tema.texto }}>{val}</Text>
+                  </View>
+                ))}
+              </View>
+            )}
+
+            {statsData && (
+              <View style={{ backgroundColor: tema.fondoCard, borderRadius: 14, padding: 16, borderWidth: 1, borderColor: tema.borde, marginBottom: 16 }}>
+                <Text style={{ fontSize: 14, fontWeight: '700', color: tema.texto, marginBottom: 12 }}>📊 Estadísticas de Hoy</Text>
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
+                  {[
+                    { label: 'Ventas hoy', val: statsData.hoy?.ventas, color: tema.primario },
+                    { label: 'Monto hoy', val: `Q${statsData.hoy?.monto}`, color: tema.success },
+                    { label: 'Productos', val: statsData.productos, color: '#7c3aed' },
+                    { label: 'Usuarios activos', val: statsData.usuarios_activos, color: '#f59e0b' },
+                    { label: 'Intentos fallidos/hora', val: statsData.intentos_fallidos_hora, color: statsData.intentos_fallidos_hora > 5 ? '#dc2626' : tema.success },
+                  ].map(({ label, val, color }) => (
+                    <View key={label} style={{ width: '47%', backgroundColor: tema.fondoSecundario, borderRadius: 10, padding: 12, alignItems: 'center', borderWidth: 1, borderColor: tema.borde }}>
+                      <Text style={{ fontSize: 20, fontWeight: '900', color }}>{val}</Text>
+                      <Text style={{ fontSize: 10, color: tema.textoTerciario, marginTop: 4, textAlign: 'center' }}>{label}</Text>
+                    </View>
+                  ))}
+                </View>
+              </View>
+            )}
+
+            {!healthData && !cargandoMonitor && (
+              <View style={{ alignItems: 'center', padding: 40 }}>
+                <Text style={{ fontSize: 48, marginBottom: 8 }}>📊</Text>
+                <Text style={{ fontSize: 14, color: tema.textoTerciario }}>Presiona actualizar para ver el estado</Text>
+              </View>
+            )}
             <View style={{ height: 40 }} />
           </View>
         )}
