@@ -27,7 +27,7 @@ export default function VentasScreen() {
     if (usuario) setRolUsuario(JSON.parse(usuario).rol)
   }
 
-const cargarDatos = async () => {
+  const cargarDatos = async () => {
     try {
       const [resHoy, vHoy] = await Promise.all([
         ventasService.resumenHoy(),
@@ -65,6 +65,32 @@ const cargarDatos = async () => {
     } finally {
       setCargandoEmpleado(false)
     }
+  }
+
+  const cancelarVenta = (venta) => {
+    Alert.alert(
+      '🚫 Cancelar Venta',
+      `¿Cancelar la venta de Q${parseFloat(venta.total).toFixed(2)}?\n\nEsto restaurará el stock de los productos.`,
+      [
+        { text: 'No', style: 'cancel' },
+        {
+          text: 'Cancelar Venta', style: 'destructive', onPress: async () => {
+            try {
+              const usuarioData = await AsyncStorage.getItem('usuario')
+              const usuario = usuarioData ? JSON.parse(usuarioData) : null
+              await ventasService.cancelar(venta.id, {
+                motivo: 'Cancelada desde la app',
+                usuario_id: usuario?.id
+              })
+              Alert.alert('✅ Venta cancelada', 'El stock fue restaurado')
+              cargarDatos()
+            } catch (e) {
+              Alert.alert('Error', e.response?.data?.error || 'No se pudo cancelar')
+            }
+          }
+        }
+      ]
+    )
   }
 
   const totalEfectivo = ventas.filter(v => v.metodo_pago === 'efectivo').reduce((s, v) => s + parseFloat(v.total || 0), 0)
@@ -156,23 +182,35 @@ const cargarDatos = async () => {
                 <Text style={{ fontSize: 14, color: tema.textoTerciario }}>Sin ventas hoy</Text>
               </View>
             ) : ventas.map(v => (
-              <TouchableOpacity
+              <View
                 key={v.id}
-                style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: tema.fondoCard, borderRadius: 12, padding: 12, marginBottom: 6, borderWidth: 1, borderColor: tema.borde }}
-                onPress={() => setModalVenta(v)}
+                style={{ backgroundColor: v.cancelada ? '#f9fafb' : tema.fondoCard, borderRadius: 12, padding: 12, marginBottom: 6, borderWidth: 1, borderColor: v.cancelada ? '#e5e7eb' : tema.borde }}
               >
-                <View style={{ width: 42, height: 42, borderRadius: 10, backgroundColor: metodoColor(v.metodo_pago) + '20', alignItems: 'center', justifyContent: 'center', marginRight: 10 }}>
-                  <Text style={{ fontSize: 18 }}>{metodoEmoji(v.metodo_pago)}</Text>
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={{ fontSize: 13, fontWeight: '700', color: tema.texto }}>{formatHora(v.created_at)}</Text>
-                  <Text style={{ fontSize: 11, color: tema.textoTerciario, textTransform: 'capitalize' }}>{v.metodo_pago}</Text>
-                </View>
-                <View style={{ alignItems: 'flex-end' }}>
-                  <Text style={{ fontSize: 15, fontWeight: '900', color: tema.primario }}>Q{parseFloat(v.total).toFixed(2)}</Text>
-                  {v.vuelto > 0 && <Text style={{ fontSize: 10, color: tema.warning }}>Vuelto: Q{parseFloat(v.vuelto).toFixed(2)}</Text>}
-                </View>
-              </TouchableOpacity>
+                <TouchableOpacity
+                  style={{ flexDirection: 'row', alignItems: 'center' }}
+                  onPress={() => setModalVenta(v)}
+                >
+                  <View style={{ width: 42, height: 42, borderRadius: 10, backgroundColor: metodoColor(v.metodo_pago) + '20', alignItems: 'center', justifyContent: 'center', marginRight: 10 }}>
+                    <Text style={{ fontSize: 18 }}>{metodoEmoji(v.metodo_pago)}</Text>
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ fontSize: 13, fontWeight: '700', color: v.cancelada ? '#9ca3af' : tema.texto }}>{formatHora(v.created_at)}</Text>
+                    <Text style={{ fontSize: 11, color: tema.textoTerciario, textTransform: 'capitalize' }}>{v.metodo_pago}</Text>
+                  </View>
+                  <View style={{ alignItems: 'flex-end' }}>
+                    <Text style={{ fontSize: 15, fontWeight: '900', color: v.cancelada ? '#9ca3af' : tema.primario }}>Q{parseFloat(v.total).toFixed(2)}</Text>
+                    {v.vuelto > 0 && <Text style={{ fontSize: 10, color: tema.warning }}>Vuelto: Q{parseFloat(v.vuelto).toFixed(2)}</Text>}
+                  </View>
+                </TouchableOpacity>
+                {rolUsuario === 'admin' && !v.cancelada && (
+                  <TouchableOpacity style={{ marginTop: 6, alignSelf: 'flex-end' }} onPress={() => cancelarVenta(v)}>
+                    <Text style={{ fontSize: 11, color: '#dc2626', fontWeight: '600' }}>🚫 Cancelar venta</Text>
+                  </TouchableOpacity>
+                )}
+                {v.cancelada && (
+                  <Text style={{ fontSize: 11, color: '#9ca3af', marginTop: 4, alignSelf: 'flex-end' }}>❌ Cancelada</Text>
+                )}
+              </View>
             ))}
           </View>
         </ScrollView>
