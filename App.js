@@ -28,6 +28,7 @@ import MermasScreen from './src/screens/MermasScreen'
 import EmpleadosScreen from './src/screens/EmpleadosScreen'
 import SeguridadScreen from './src/screens/SeguridadScreen' 
 import SucursalesScreen from './src/screens/SucursalesScreen'
+import AyudaScreen from './src/screens/AyudaScreen'
 
 const Drawer = createDrawerNavigator()
 const Stack = createNativeStackNavigator()
@@ -48,8 +49,9 @@ const MENU_ADMIN = [
   { name: 'Proveedores', label: 'Proveedores', emoji: '🏭', color: '#2563EB' },
   { name: 'Turnos', label: 'Turnos', emoji: '🕒', color: '#F59E0B' },
   { name: 'Mermas', label: 'Mermas', emoji: '📉', color: '#FF9800' },
-  { name: 'Seguridad', label: 'Seguridad', emoji: '🔐', color: '#6366f1' }
+  { name: 'Seguridad', label: 'Seguridad', emoji: '🔐', color: '#6366f1' },
   { name: 'Sucursales', label: 'Sucursales', emoji: '🏪', color: '#0891b2' },
+  { name: 'Ayuda', label: 'Ayuda', emoji: '📖', color: '#0891b2' },
 
 ]
 
@@ -58,7 +60,8 @@ const MENU_EMPLEADO = [
   { name: 'Ventas', label: 'Mis Ventas', emoji: '💰', color: '#10b981' },
   { name: 'Dashboard', label: 'Dashboard', emoji: '📊', color: '#1a56db' },
   { name: 'Notificaciones', label: 'Notificaciones', emoji: '🔔', color: '#dc2626' },
-  { name: 'Empleados', label: 'Empleados', emoji: '👥', color: '#7C3AED' }
+  { name: 'Empleados', label: 'Empleados', emoji: '👥', color: '#7C3AED' },
+  { name: 'Ayuda', label: 'Ayuda', emoji: '📖', color: '#0891b2' },
 ]
 
 function MenuLateral({ navigation, state, onLogout }) {
@@ -189,6 +192,7 @@ function AppDrawer({ onLogout }) {
       <Drawer.Screen name="Empleados" component={EmpleadosScreen} options={{ title: '👥 Empleados' }} />
       <Drawer.Screen name="Seguridad" component={SeguridadScreen} options={{ title: '🔐 Seguridad' }} />
       <Drawer.Screen name="Sucursales" component={SucursalesScreen} options={{ title: '🏪 Sucursales' }} />
+      <Drawer.Screen name="Ayuda" component={AyudaScreen} options={{ title: '📖 Ayuda' }} />
     </Drawer.Navigator>
   )
 }
