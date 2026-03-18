@@ -135,4 +135,13 @@ export const monitorService = {
   stats: () => api.get('/monitor/stats'),
 }
 
+// SUCURSALES
+export const sucursalesService = {
+  obtenerTodas: () => api.get('/sucursales'),
+  crear: (data) => api.post('/sucursales', data),
+  actualizar: (id, data) => api.put(`/sucursales/${id}`, data),
+  eliminar: (id) => api.delete(`/sucursales/${id}`),
+  reporte: (id, desde, hasta) => api.get(`/sucursales/${id}/reporte?desde=${desde}&hasta=${hasta}`),
+}
+
 export default api

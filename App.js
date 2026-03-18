@@ -27,6 +27,7 @@ import TurnosScreen from './src/screens/TurnosScreen'
 import MermasScreen from './src/screens/MermasScreen'
 import EmpleadosScreen from './src/screens/EmpleadosScreen'
 import SeguridadScreen from './src/screens/SeguridadScreen' 
+import SucursalesScreen from './src/screens/SucursalesScreen'
 
 const Drawer = createDrawerNavigator()
 const Stack = createNativeStackNavigator()
@@ -48,6 +49,7 @@ const MENU_ADMIN = [
   { name: 'Turnos', label: 'Turnos', emoji: '🕒', color: '#F59E0B' },
   { name: 'Mermas', label: 'Mermas', emoji: '📉', color: '#FF9800' },
   { name: 'Seguridad', label: 'Seguridad', emoji: '🔐', color: '#6366f1' }
+  { name: 'Sucursales', label: 'Sucursales', emoji: '🏪', color: '#0891b2' },
 
 ]
 
@@ -186,6 +188,7 @@ function AppDrawer({ onLogout }) {
       <Drawer.Screen name="Mermas" component={MermasScreen} options={{ title: '📉 Control de Mermas' }} />
       <Drawer.Screen name="Empleados" component={EmpleadosScreen} options={{ title: '👥 Empleados' }} />
       <Drawer.Screen name="Seguridad" component={SeguridadScreen} options={{ title: '🔐 Seguridad' }} />
+      <Drawer.Screen name="Sucursales" component={SucursalesScreen} options={{ title: '🏪 Sucursales' }} />
     </Drawer.Navigator>
   )
 }
